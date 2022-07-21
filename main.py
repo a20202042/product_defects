@@ -178,7 +178,7 @@ while (True):
     crop_img = crop(box, crop_img)
     try:
         cv2.imshow('crop_img', crop_img)
-        status = cv2.imwrite('match_data/or_3.png', crop_img)
+        status = cv2.imwrite('match_data/or_6.png', crop_img)
     except:
         crop_img = np.zeros((500, 500, 3), dtype="uint8")
         # print('crop_img not crop')  # 測試用
