@@ -7,7 +7,7 @@ import json
 
 def hu_moment(im):
     # im = cv2.imread(img_filename, cv2.IMREAD_GRAYSCALE)
-    _, im = cv2.threshold(im, 40, 255, cv2.THRESH_BINARY)
+    _, im = cv2.threshold(im, 60, 255, cv2.THRESH_BINARY)
     moments = cv2.moments(im)
     huMoments = cv2.HuMoments(moments)
     for i in range(0, 7):
@@ -37,7 +37,7 @@ files = os.listdir('match_data')
 for file in files:
     print(file)
     all_hu = []
-    for i in range(0, 90):
+    for i in range(0, 180):
         im = cv2.imread('match_data\\' + file, cv2.IMREAD_GRAYSCALE)
         im = rotate_img(im, i)
         hu = hu_moment(im)
