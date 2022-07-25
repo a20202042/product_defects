@@ -5,7 +5,7 @@ import numpy as np
 
 
 def main(argv):
-    default_file = '1.png'
+    default_file = 'match_data\\or_3.png'
     filename = argv[0] if len(argv) > 0 else default_file
     # Loads an image
     src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_GRAYSCALE)

@@ -1,15 +1,30 @@
 # ----------------------------------------透過pytesseract將圖片轉文字
-
+import cv2
 from PIL import Image
 import pytesseract
-img_name = 'text_recognition_photo\\or_2.png' #Input圖片檔名
-img = Image.open(img_name)
-text = pytesseract.image_to_string(img, lang='eng') #辨識圖片中文字部分
+
+img_name = 'match_data\\or_2.png'  # Input圖片檔名
+# img = Image.open(img_name)
+img = cv2.imread(img_name)
+text = pytesseract.image_to_string(img, lang='eng')  # 辨識圖片中文字部分
 print(text)
 
 # 圖片辨識時，文字需擺正。目前測試可以辨識3D列印樣品文字，但實品雷雕文字因為太過模糊而無法辨識
 # 三角形樣品目前測試僅有最小矩形裁切後的照片才能辨識，直接拍攝的原圖無法辨識出文字
+import cv2
+import pytesseract
+# img = cv2.imread('/home/gautam/Desktop/python/ocr/SEAGATE/SEAGATE-01.jpg')
 
+from pytesseract import Output
+d = pytesseract.image_to_data(img_name, output_type=Output.DICT)
+n_boxes = len(d['level'])
+for i in range(n_boxes):
+    if(d['text'][i] != ""):
+        (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+cv2.imshow('img', img)
+cv2.waitKey(0)
 # ----------------------------------------在圖片上依座標框出矩形
 
 # import numpy as np

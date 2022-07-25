@@ -5,6 +5,8 @@ from math import copysign, log10
 from sentence_transformers import SentenceTransformer, util
 from PIL import Image
 import glob
+from PIL import Image
+import pytesseract, re
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
@@ -88,7 +90,7 @@ def rotate_img(img, angle):
 
 
 def crop(left_point_x, right_point_x, top_point_y, bottom_point_y, crop_img):
-    range = 5
+    range = 0
     x = min([left_point_x, right_point_x]) - range
     w = abs(right_point_x - left_point_x) + range * 2
     y = min([top_point_y, bottom_point_y]) - range
@@ -232,6 +234,14 @@ def similarity(item):
     return source
 
 
+def text_find(img):
+    # img_name = 'match_data\\or_1.png'  # Input圖片檔名
+    # img = cv2.imread(img_name)
+    text = pytesseract.image_to_string(img, lang='eng')
+    text = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", text)
+    return text
+
+
 hu_data = load_hu_data()
 
 dir = 'match_data'
@@ -268,7 +278,7 @@ while (True):
         # cv2.imshow('crop_img', crop_img)
         cv2.imshow('crop_img', crop_img)
         check = True
-        # status = cv2.imwrite('match_data/or_3.png', crop_img)
+        status = cv2.imwrite('or_1_2.png', crop_img)
     except:
         crop_img = np.zeros((500, 500, 3), dtype="uint8")
         check = False
@@ -294,8 +304,9 @@ while (True):
                         # print(HU)
                         if HU is True:
                             hu_check = True
-                            cv2.putText(frame, item['file'] + max_val_ncc + 'hu_go', [100, 100], cv2.FONT_HERSHEY_SIMPLEX,
-                                        1,(255, 255, 0), 2, cv2.LINE_AA)
+                            cv2.putText(frame, item['file'] + max_val_ncc + 'hu_go', [100, 100],
+                                        cv2.FONT_HERSHEY_SIMPLEX,
+                                        1, (255, 255, 0), 2, cv2.LINE_AA)
                             break
                         else:
                             cv2.putText(frame, item['file'] + max_val_ncc, [100, 100], cv2.FONT_HERSHEY_SIMPLEX, 1,
@@ -308,7 +319,7 @@ while (True):
                 cv2.putText(frame, 'not_find', [100, 100], cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2,
                             cv2.LINE_AA)
 
-        cv2.imshow('cam', frame)
+
 
     # # ------目標區域圓孔偵測
     # circle_detect_img = crop_img.copy()
@@ -316,10 +327,19 @@ while (True):
     # cv2.imshow('circle_detect_img', circle_detect_img)
     #
     # # ------目標區域線段偵測
+
     # line_target_img = crop_img.copy()
     # line_target_img = line_detect(line_target_img)
     # cv2.imshow('line_target_img', line_target_img)
     # cv2.imshow('crop_img', crop_img)
+
+    # # ------目標區域文字
+    if check is True:
+        text = text_find(crop_img)
+        cv2.putText(frame, str(text), [100, 150], cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    (255, 255, 0), 2, cv2.LINE_AA)
+
+    cv2.imshow('cam', frame)
     if cv2.waitKey(1) == ord('q'):
         break
 
