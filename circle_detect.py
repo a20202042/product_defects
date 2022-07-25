@@ -2,28 +2,28 @@ import sys
 import cv2 as cv
 import numpy as np
 
-#vvvvvv
+
 def main(argv):
-    default_file = '0.png'
+    default_file = 'match_data\\or_3.png'
     src = cv.imread(default_file) #讀取圖片
     gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY) #轉灰階
 
-    gray = cv.medianBlur(gray, 5)
+    gray = cv.medianBlur(gray, 7) #使用中值平滑對影圖像進行模糊處理
 
     rows = gray.shape[0]
     circles = cv.HoughCircles(gray,
-                              cv.HOUGH_GRADIENT, #
-                              minDist=6,
+                              cv.HOUGH_GRADIENT,
+                              minDist=10,
                               #圓心距離
-                              dp=1,
+                              dp=1.2,
                               #檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
                               param1=150,
                               #canny檢測的高闊值，低闊值為一半
                               param2=15,
                               #圓心的累加器闊值，越小檢測更多的圓，越大越精確
-                              minRadius=8,
+                              minRadius=10,
                               #最小半徑
-                              maxRadius=10)
+                              maxRadius=19)
                               #最大半徑
     circles_data = []
     if circles is not None:
