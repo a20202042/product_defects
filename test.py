@@ -16,7 +16,7 @@ def text_find(img):
 
 def find_text_position():
     # 讀取圖片
-    imagePath = 'match_data\\or_3.png'
+    imagePath = 'match_data\\or_2.png'
     img = cv2.imread(imagePath)
     # 轉化成灰度圖
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

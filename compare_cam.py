@@ -38,7 +38,7 @@ def find_text_position(img):
         cnt = contours[i]
         # 計算輪廓面積，並篩選掉面積小的
         area = cv2.contourArea(cnt)
-        if (area < 500):
+        if (area < 350):
             continue
         # 找到最小的矩形
         rect = cv2.minAreaRect(cnt)
@@ -79,8 +79,65 @@ def find_text_position(img):
     cnt = max(contours, key=cv2.contourArea)
     x, y, w, h = cv2.boundingRect(cnt)
     cv2.rectangle(zero_img, (x, y), (x + w, y + h), (255, 255, 0), 1)
+    cv2.imshow('zero_img', zero_img)
     print(x, y, w, h)
     return [x, y, w, h]
+
+
+def compare(before, after):
+    # Load images
+    # before = cv2.imread('match_data\\or_1.png')
+    before = cv2.resize(before, (250, 250), interpolation=cv2.INTER_AREA)
+
+    # after = cv2.imread('or_1_2.png')
+    after = cv2.resize(after, (250, 250), interpolation=cv2.INTER_AREA)
+    range_data = find_text_position(after)
+
+    # Convert images to grayscale
+    before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
+    after_gray = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
+
+    # Compute SSIM between the two images
+    (score, diff) = structural_similarity(before_gray, after_gray, full=True)
+    print("Image Similarity: {:.4f}%".format(score * 100))
+
+    # The diff image contains the actual image differences between the two images
+    # and is represented as a floating point data type in the range [0,1]
+    # so we must convert the array to 8-bit unsigned integers in the range
+    # [0,255] before we can use it with OpenCV
+    diff = (diff * 255).astype("uint8")
+    diff_box = cv2.merge([diff, diff, diff])
+
+    # Threshold the difference image, followed by finding contours to
+    # obtain the regions of the two input images that differ
+    thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+    contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+
+    mask = np.zeros(before.shape, dtype='uint8')
+    filled_after = after.copy()
+
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area > 350:
+            x, y, w, h = cv2.boundingRect(c)
+            # print(x, y, w, h)
+            # print(range_data)
+            if range_data[0] < x < range_data[2] or range_data[0] < x + w < range_data[2]:
+                pass
+            elif range_data[1] < y < range_data[3] or range_data[1] < y + h < range_data[3]:
+                pass
+            elif x < range_data[0] < x + w or x < range_data[2] < x + w:
+                pass
+            elif y < range_data[1] < y + h or y < range_data[3] < y + h:
+                pass
+            else:
+                cv2.rectangle(before, (x, y), (x + w, y + h), (36, 255, 12), 2)
+                cv2.rectangle(after, (x, y), (x + w, y + h), (36, 255, 12), 2)
+                cv2.rectangle(diff_box, (x, y), (x + w, y + h), (36, 255, 12), 2)
+                cv2.drawContours(mask, [c], 0, (255, 255, 255), -1)
+                cv2.drawContours(filled_after, [c], 0, (0, 255, 0), -1)
+    return before, after, filled_after
 
 
 def box_compact(img):
@@ -110,102 +167,31 @@ def crop(left_point_x, right_point_x, top_point_y, bottom_point_y, crop_img):
     crop_img = crop_img[y:y + h, x:x + w]
     return crop_img
 
-def angle_calculate(box):
-    import math
-    # print(point_1, point_2)
-    left_point_x = np.min(box[:, 0])
-    right_point_x = np.max(box[:, 0])
-    top_point_y = np.min(box[:, 1])
-    bottom_point_y = np.max(box[:, 1])
-    left_point_y = box[:, 1][np.where(box[:, 0] == left_point_x)][0]
-    right_point_y = box[:, 1][np.where(box[:, 0] == right_point_x)][0]
-    top_point_x = box[:, 0][np.where(box[:, 1] == top_point_y)][0]
-    bottom_point_x = box[:, 0][np.where(box[:, 1] == bottom_point_y)][0]
-    # print(left_point_y, right_point_y, top_point_x, bottom_point_x)
-    top_point = [top_point_x, top_point_y]
-    bottom_point = [bottom_point_x, bottom_point_y]
-    right_point = [right_point_x, right_point_y]
-    left_point = [left_point_x, left_point_y]
-    # print(top_point, bottom_point, right_point, left_point)
-    point_data = [top_point, bottom_point, right_point, left_point]
-    # angle_ = angle(right_point, left_point)
-    angle_ = math.atan2(bottom_point[0] - right_point[0], bottom_point[1] - right_point[1]) / math.pi * 180
-    return angle_
 
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
+cap.set(cv2.CAP_PROP_CONTRAST, 5.0)  # 对比度 32
+cap.set(cv2.CAP_PROP_SATURATION, 83.0)  # 饱和度 64
+cap.set(cv2.CAP_PROP_HUE, -1.0)  # 色调 0
+cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
+# print('亮度:', cap.get(cv2.CAP_PROP_BRIGHTNESS))
+# print('对比度:', cap.get(cv2.CAP_PROP_CONTRAST))
+# print('饱和度:', cap.get(cv2.CAP_PROP_SATURATION))
+# print('色调:', cap.get(cv2.CAP_PROP_HUE))
+# print('曝光度:', cap.get(cv2.CAP_PROP_EXPOSURE))
 
-def rotate_img(img, angle):
-    import imutils
-    rotated_img = imutils.rotate_bound(img, angle)
-    # rotated_img
-    return rotated_img
-
-# Load images
+ret, cv_img = cap.read()
 before = cv2.imread('match_data\\or_1.png')
-before = cv2.resize(before, (240, 240), interpolation=cv2.INTER_AREA)
-
-after = cv2.imread('or_1_2.png')
-after = cv2.resize(after, (240, 240), interpolation=cv2.INTER_AREA)
-
-# crop_img, rotated_img = after.copy(), after.copy()
-range_data = find_text_position(after)
-#
-# box_img, box_compact_img, box = box_compact(after)
-#
-# # # -----抓出最小方形角度並旋轉
-# angle = angle_calculate(box)
-# print(angle)
-# rotated_img = rotate_img(rotated_img, angle)
-# cv2.imshow('rotated_img', rotated_img)
-# cv2.waitKey(0)
-# #
-# # # -----裁切出目標區域
-# not_use, not_use_2, box = box_compact(rotated_img)
-# crop_img = rotate_img(crop_img, angle)
-# after = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
-# after = cv2.resize(after, (240, 240), interpolation=cv2.INTER_AREA)
-
-# Convert images to grayscale
-before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
-after_gray = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
-
-# Compute SSIM between the two images
-(score, diff) = structural_similarity(before_gray, after_gray, full=True)
-print("Image Similarity: {:.4f}%".format(score * 100))
-
-# The diff image contains the actual image differences between the two images
-# and is represented as a floating point data type in the range [0,1]
-# so we must convert the array to 8-bit unsigned integers in the range
-# [0,255] before we can use it with OpenCV
-diff = (diff * 255).astype("uint8")
-diff_box = cv2.merge([diff, diff, diff])
-
-# Threshold the difference image, followed by finding contours to
-# obtain the regions of the two input images that differ
-thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-contours = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-contours = contours[0] if len(contours) == 2 else contours[1]
-
-mask = np.zeros(before.shape, dtype='uint8')
-filled_after = after.copy()
-
-for c in contours:
-    area = cv2.contourArea(c)
-    if area > 350:
-        x, y, w, h = cv2.boundingRect(c)
-        # print(x, y, w, h)
-        # print(range_data)
-        if range_data[0] < x < range_data[2] or range_data[0] < x + w < range_data[2]:
-            pass
-        # elif x < range_data[0] < x + w or x < range_data[2] < x + w:
-        #     pass
-        else:
-            cv2.rectangle(before, (x, y), (x + w, y + h), (36, 255, 12), 2)
-            cv2.rectangle(after, (x, y), (x + w, y + h), (36, 255, 12), 2)
-            cv2.rectangle(diff_box, (x, y), (x + w, y + h), (36, 255, 12), 2)
-            cv2.drawContours(mask, [c], 0, (255, 255, 255), -1)
-            cv2.drawContours(filled_after, [c], 0, (0, 255, 0), -1)
-
-cv2.imshow('before', before)
-cv2.imshow('after', after)
-cv2.imshow('filled after', filled_after)
-cv2.waitKey()
+while (True):
+    ret, frame = cap.read()
+    rotated_img, crop_img = frame.copy(), frame.copy()
+    box_img, box_compact_img, box = box_compact(frame)
+    crop_img = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
+    before, after, filled_after = compare(before, crop_img)
+    cv2.imshow('before', before)
+    cv2.imshow('after', after)
+    cv2.imshow('filled after', filled_after)
+    if cv2.waitKey(1) == ord('q'):
+        break
