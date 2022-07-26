@@ -262,7 +262,9 @@ while (True):
     # cv2.imshow('gray_res', gray_res)
 
     box_img, box_compact_img, box = box_compact(frame)
-    crop_img = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
+    cv2.imshow('gray_res', gray_res)
+    cv2.waitKey(0)
+    # crop_img = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
 
     # # -----抓出最小方形角度並旋轉
     angle = angle_calculate(box)
@@ -278,7 +280,7 @@ while (True):
         # cv2.imshow('crop_img', crop_img)
         cv2.imshow('crop_img', crop_img)
         check = True
-        status = cv2.imwrite('or_1_2.png', crop_img)
+        status = cv2.imwrite('or_2_1.png', crop_img)
     except:
         crop_img = np.zeros((500, 500, 3), dtype="uint8")
         check = False
