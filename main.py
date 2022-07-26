@@ -90,7 +90,7 @@ def rotate_img(img, angle):
 
 
 def crop(left_point_x, right_point_x, top_point_y, bottom_point_y, crop_img):
-    range = 0
+    range = 3
     x = min([left_point_x, right_point_x]) - range
     w = abs(right_point_x - left_point_x) + range * 2
     y = min([top_point_y, bottom_point_y]) - range
@@ -262,9 +262,7 @@ while (True):
     # cv2.imshow('gray_res', gray_res)
 
     box_img, box_compact_img, box = box_compact(frame)
-    cv2.imshow('gray_res', gray_res)
-    cv2.waitKey(0)
-    # crop_img = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
+    crop_img = crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), crop_img)
 
     # # -----抓出最小方形角度並旋轉
     angle = angle_calculate(box)
@@ -280,7 +278,7 @@ while (True):
         # cv2.imshow('crop_img', crop_img)
         cv2.imshow('crop_img', crop_img)
         check = True
-        status = cv2.imwrite('or_2_1.png', crop_img)
+        # status = cv2.imwrite('or_3_5.png', crop_img)
     except:
         crop_img = np.zeros((500, 500, 3), dtype="uint8")
         check = False
@@ -296,7 +294,7 @@ while (True):
                 res = cv2.matchTemplate(crop_img, template, cv2.TM_CCORR_NORMED)
                 min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
                 max_val_ncc = '{:.3f}'.format(max_val)
-                if float(max_val_ncc) > 0.96:
+                if float(max_val_ncc) > 0.9:
                     match = True
                     top_left = max_loc
                     bottom_right = (top_left[0] + w, top_left[1] + h)
@@ -323,10 +321,10 @@ while (True):
 
 
 
-    # # ------目標區域圓孔偵測
-    # circle_detect_img = crop_img.copy()
-    # circle_detect_img, circles_data = circle_detect(circle_detect_img)
-    # cv2.imshow('circle_detect_img', circle_detect_img)
+    # ------目標區域圓孔偵測
+    circle_detect_img = crop_img.copy()
+    circle_detect_img, circles_data = circle_detect(circle_detect_img)
+    cv2.imshow('circle_detect_img', circle_detect_img)
     #
     # # ------目標區域線段偵測
 
