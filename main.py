@@ -99,35 +99,54 @@ def crop(left_point_x, right_point_x, top_point_y, bottom_point_y, crop_img):
     return crop_img
 
 
-def circle_detect(crop_img):
-    gray = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.medianBlur(gray, 5)
+def circle_detect(img):
+    # default_file = 'or_1_2.png'
+    # src = cv.imread(img) #讀取圖片
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # 轉灰階
+
+    gray = cv2.medianBlur(gray, 7)  # 使用中值平滑對影圖像進行模糊處理
+
     rows = gray.shape[0]
-    circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT,
-                               minDist=6, dp=1.1,
-                               param1=100, param2=15,
-                               minRadius=8, maxRadius=50)
-    # circles = cv2.HoughCircles(gray, cv2.HOUGH_GRADIENT, 1.2, 100)
+
+    circles = cv2.HoughCircles(gray,
+                              cv2.HOUGH_GRADIENT,
+                              minDist=10,
+                              # 圓心距離
+                              dp=1.2,
+                              # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
+                              param1=150,
+                              # canny檢測的高闊值，低闊值為一半
+                              param2=18,
+                              # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
+                              minRadius=9,
+                              # 最小半徑
+                              maxRadius=19)
+    # 最大半徑
     circles_data = []
     if circles is not None:
         circles = np.uint16(np.around(circles))
+        # 四捨五入(np.around)後，轉換成16位無符號整數(np.uint16)。
         number = 1
         for i in circles[0, :]:
             center = (i[0], i[1])
             # circle center
-            cv2.circle(crop_img, center, 1, (0, 100, 100), 3)
+            cv2.circle(img, center, 1, (0, 100, 100), 3)
+            # (原圖、圓心、半徑、顏色、粗細)
             # circle outline
             radius = i[2]
-            cv2.circle(crop_img, center, radius, (255, 0, 255), 3)
-            circles_data.append({'number': number, 'center': center, 'r': i})
-            number = number + 1
+            cv2.circle(img, center, radius, (255, 255, 255), 3)
+            circles_data.append({'number': number, 'center': center, 'r': i})  # 每個圈的數據
+            number = number + 1  # 計數器加1
+    # print(circles_data)
     for item in circles_data:
-        text = 'circle_%s' % item['number']
-        cv2.putText(crop_img, text, item['center'], cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (255, 255, 0), 2, cv2.LINE_AA)
-    # print(len(circles_data))
-    return crop_img, circles_data
-    # cv2.imshow("detected circles", crop_img)
+        text = '%s' % item['number']
+        cv2.putText(img, text, item['center'], cv2.FONT_HERSHEY_SIMPLEX,
+                   1, (0, 0, 255), 2, cv2.LINE_AA)
+        # 繪製文字(圖片影像/繪製的文字/左上角坐標/字體/字體大小/顏色/字體粗細/字體線條種類)
+    # cv.imshow("detected circles", src)
+    #
+    # cv.waitKey(0)
+    return img, circles_data
 
 
 def line_detect(src):
@@ -241,6 +260,81 @@ def text_find(img):
     text = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", text)
     return text
 
+def find_text_position(img):
+    # 讀取圖片
+    # imagePath = 'match_data\\or_2.png'
+    # imagePath = 'or_1_4.png'
+    # img = cv2.imread(imagePath)
+    # 轉化成灰度圖
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # 利用Sobel邊緣檢測生成二值圖
+    sobel = cv2.Sobel(gray, cv2.CV_8U, 1, 0, ksize=3)
+    # 二值化
+    ret, binary = cv2.threshold(sobel, 50, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
+    # 膨脹、腐蝕
+    element1 = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 5))
+    element2 = cv2.getStructuringElement(cv2.MORPH_RECT, (24, 5))
+    # 膨脹一次，讓輪廓突出
+    dilation = cv2.dilate(binary, element2, iterations=1)
+    # 腐蝕一次，去掉細節
+    erosion = cv2.erode(dilation, element1, iterations=1)
+    # 再次膨脹，讓輪廓明顯一些
+    dilation2 = cv2.dilate(erosion, element2, iterations=1)
+    #  查詢輪廓和篩選文字區域
+    region = []
+    range_data = []
+    contours, hierarchy = cv2.findContours(dilation2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    for i in range(len(contours)):
+        cnt = contours[i]
+        # 計算輪廓面積，並篩選掉面積小的
+        area = cv2.contourArea(cnt)
+        if (area < 600):
+            continue
+        # 找到最小的矩形
+        rect = cv2.minAreaRect(cnt)
+        # print("rect is: ")
+        # print(rect)
+        # box是四個點的座標
+        box = cv2.boxPoints(rect)
+        box = np.int0(box)
+        # 計算高和寬
+        height = abs(box[0][1] - box[2][1])
+        width = abs(box[0][0] - box[2][0])
+        # 根據文字特徵，篩選那些太細的矩形，留下扁的
+        if (height > width * 1.5):
+            continue
+        region.append(box)
+    copy_img = img.copy()
+    zero_shape = img.shape
+    zero_img = np.zeros(shape=zero_shape, dtype='uint8')
+
+    for box in region:
+        # cv2.drawContours(copy_img, [box], 0, (0, 255, 0), 2)
+        cv2.drawContours(zero_img, [box], 0, (0, 255, 0), 2)
+        range_data.append(cv2.boundingRect(box))
+        # print(box)
+    for rect in range_data:
+        range_ = 3
+        crop_img = copy_img[rect[1] - range_:rect[1] + rect[3] + range_ * 2,
+                   rect[0] - range_:rect[0] + rect[2] + range_ * 2]
+        text = text_find(crop_img)
+        # print(text)
+        # cv2.imshow(str(text), crop_img)
+
+    gray = cv2.cvtColor(zero_img, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    kernel = np.ones((5, 5), dtype=np.uint8)
+    closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    cnt = max(contours, key=cv2.contourArea)
+    x, y, w, h = cv2.boundingRect(cnt)
+    cv2.rectangle(zero_img, (x, y), (x + w, y + h), (255, 255, 0), 1)
+    # print(x, y, w, h)
+    # cv2.imshow('zero_img', zero_img)
+    # cv2.imshow('copy_img', copy_img)
+    # cv2.waitKey(0)
+    return (x, y, w, h)
+
 
 hu_data = load_hu_data()
 
@@ -319,12 +413,23 @@ while (True):
                 cv2.putText(frame, 'not_find', [100, 100], cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2,
                             cv2.LINE_AA)
 
-
+    # # ------目標文字位置
+    if check is True:
+        # print(crop_img.shape)
+        (x, y, w, h) = find_text_position(crop_img)
+        cv2.rectangle(crop_img, (x, y), (x + w, y + h), (255, 255, 0), 1)
+        cv2.imshow('crop_img', crop_img)
+    # # ------目標區域文字
+    if check is True:
+        text = text_find(crop_img)
+        cv2.putText(frame, str(text), [100, 150], cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    (255, 255, 0), 2, cv2.LINE_AA)
 
     # ------目標區域圓孔偵測
-    circle_detect_img = crop_img.copy()
-    circle_detect_img, circles_data = circle_detect(circle_detect_img)
-    cv2.imshow('circle_detect_img', circle_detect_img)
+    if check is True:
+        circle_detect_img = crop_img.copy()
+        circle_detect_img, circles_data = circle_detect(circle_detect_img)
+        cv2.imshow('circle_detect_img', circle_detect_img)
     #
     # # ------目標區域線段偵測
 
@@ -333,11 +438,7 @@ while (True):
     # cv2.imshow('line_target_img', line_target_img)
     # cv2.imshow('crop_img', crop_img)
 
-    # # ------目標區域文字
-    if check is True:
-        text = text_find(crop_img)
-        cv2.putText(frame, str(text), [100, 150], cv2.FONT_HERSHEY_SIMPLEX, 1,
-                    (255, 255, 0), 2, cv2.LINE_AA)
+
 
     cv2.imshow('cam', frame)
     if cv2.waitKey(1) == ord('q'):
