@@ -3,7 +3,7 @@ import cv2
 from PIL import Image
 import pytesseract
 
-img_name = 'match_data\\or_2.png'  # Input圖片檔名
+img_name = 'text_recognition_photo\\test17.png'  # Input圖片檔名
 # img = Image.open(img_name)
 img = cv2.imread(img_name)
 text = pytesseract.image_to_string(img, lang='eng')  # 辨識圖片中文字部分
@@ -11,6 +11,8 @@ print(text)
 
 # 圖片辨識時，文字需擺正。目前測試可以辨識3D列印樣品文字，但實品雷雕文字因為太過模糊而無法辨識
 # 三角形樣品目前測試僅有最小矩形裁切後的照片才能辨識，直接拍攝的原圖無法辨識出文字
+
+# ----------------------------------------測試框選文字
 import cv2
 import pytesseract
 # img = cv2.imread('/home/gautam/Desktop/python/ocr/SEAGATE/SEAGATE-01.jpg')
@@ -23,10 +25,10 @@ for i in range(n_boxes):
         (x, y, w, h) = (d['left'][i], d['top'][i], d['width'][i], d['height'][i])
         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-cv2.imshow('img', img)
-cv2.waitKey(0)
-# ----------------------------------------在圖片上依座標框出矩形
+# cv2.imshow('img', img)
+# cv2.waitKey(0)
 
+# ----------------------------------------在圖片上依座標框出矩形
 # import numpy as np
 # import cv2 as cv
 #
@@ -155,6 +157,7 @@ cv2.waitKey(0)
 #     img = cv2.imread(imagePath)
 #     detect(img)
 
+# ----------------------------------------新增項目
 import os, cv2
 import numpy as np
 
@@ -173,7 +176,7 @@ def text_find(img):
 
 def find_text_position():
     # 讀取圖片
-    imagePath = 'match_data\\or_3.png'
+    imagePath = 'text_recognition_photo\\test17.png'
     img = cv2.imread(imagePath)
     # 轉化成灰度圖
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -182,8 +185,8 @@ def find_text_position():
     # 二值化
     ret, binary = cv2.threshold(sobel, 50, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
     # 膨脹、腐蝕
-    element1 = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 5))
-    element2 = cv2.getStructuringElement(cv2.MORPH_RECT, (24, 5))
+    element1 = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 2))
+    element2 = cv2.getStructuringElement(cv2.MORPH_RECT, (24, 2))
     # 膨脹一次，讓輪廓突出
     dilation = cv2.dilate(binary, element2, iterations=1)
     # 腐蝕一次，去掉細節
@@ -198,7 +201,7 @@ def find_text_position():
         cnt = contours[i]
         # 計算輪廓面積，並篩選掉面積小的
         area = cv2.contourArea(cnt)
-        if (area < 500):
+        if (area < 150):
             continue
         # 找到最小的矩形
         rect = cv2.minAreaRect(cnt)
@@ -227,8 +230,9 @@ def find_text_position():
         range_ = 3
         crop_img = copy_img[rect[1] - range_:rect[1] + rect[3] + range_ * 2,
                    rect[0] - range_:rect[0] + rect[2] + range_ * 2]
+        cv2.imshow('crop_img', crop_img)
         text = text_find(crop_img)
-        # print(text)
+        print(text)
         # cv2.imshow(str(text), crop_img)
 
     gray = cv2.cvtColor(zero_img, cv2.COLOR_BGR2GRAY)

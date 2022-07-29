@@ -16,7 +16,7 @@ def text_find(img):
 
 def find_text_position():
     # 讀取圖片
-    imagePath = 'match_data\\or_2.png'
+    imagePath = 'text_recognition_photo\\test11.png'
     img = cv2.imread(imagePath)
     # 轉化成灰度圖
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -36,6 +36,11 @@ def find_text_position():
     #  查詢輪廓和篩選文字區域
     region = []
     range_data = []
+    cv2.imshow('1.轉成灰度圖', gray)
+    cv2.imshow('2.生成二值圖', sobel)
+    cv2.imshow('3.膨脹一次', dilation)
+    cv2.imshow('4.腐蝕一次', erosion)
+    cv2.imshow('5.再膨脹', dilation2)
     contours, hierarchy = cv2.findContours(dilation2, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for i in range(len(contours)):
         cnt = contours[i]
