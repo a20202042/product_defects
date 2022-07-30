@@ -8,23 +8,23 @@ def main(img):
     # src = cv.imread(img) #讀取圖片
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)  # 轉灰階
 
-    gray = cv.medianBlur(gray, 7)  # 使用中值平滑對影圖像進行模糊處理
+    gray = cv.medianBlur(gray, 9)  # 使用中值平滑對影圖像進行模糊處理
 
     rows = gray.shape[0]
 
     circles = cv.HoughCircles(gray,
                               cv.HOUGH_GRADIENT,
-                              minDist=10,
+                              minDist=40,
                               # 圓心距離
                               dp=1.2,
                               # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
                               param1=150,
                               # canny檢測的高闊值，低闊值為一半
-                              param2=16,
+                              param2=50,
                               # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
-                              minRadius=9,
+                              minRadius=1,
                               # 最小半徑
-                              maxRadius=19)
+                              maxRadius=40)
     # 最大半徑
     circles_data = []
     if circles is not None:
@@ -47,9 +47,9 @@ def main(img):
         cv.putText(img, text, item['center'], cv.FONT_HERSHEY_SIMPLEX,
                    1, (0, 0, 255), 2, cv.LINE_AA)
         # 繪製文字(圖片影像/繪製的文字/左上角坐標/字體/字體大小/顏色/字體粗細/字體線條種類)
-    # cv.imshow("detected circles", src)
-    #
-    # cv.waitKey(0)
+    cv.imshow("detected circles", src)
+
+    cv.waitKey(0)
     return circles_data
 
 
@@ -59,6 +59,11 @@ def main(img):
 #     main(src)
 #     print(circles_data)
 #     cv.waitKey(0)0
-src = cv.imread('or_1_2.png')  # 讀取圖片
-main(src)
-
+src = cv.imread('match_data\\ASSY-14526561-1.png')  # 讀取圖片
+# low_green = np.array([0, 0, 90])
+# high_green = np.array([255, 255, 255])
+# imgHSV = cv.cvtColor(src, cv.COLOR_BGR2HSV)
+# mask = cv.inRange(imgHSV, low_green, high_green)
+# res = cv.bitwise_and(src, src, mask=mask)
+circles_data = main(src)
+print(circles_data)

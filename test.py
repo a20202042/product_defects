@@ -16,7 +16,8 @@ def text_find(img):
 
 def find_text_position():
     # 讀取圖片
-    imagePath = 'match_data\\or_2.png'
+    # imagePath = 'match_data\\or_2.png'
+    imagePath = 'or_1_4.png'
     img = cv2.imread(imagePath)
     # 轉化成灰度圖
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -41,7 +42,7 @@ def find_text_position():
         cnt = contours[i]
         # 計算輪廓面積，並篩選掉面積小的
         area = cv2.contourArea(cnt)
-        if (area < 500):
+        if (area < 600):
             continue
         # 找到最小的矩形
         rect = cv2.minAreaRect(cnt)
@@ -62,7 +63,7 @@ def find_text_position():
     zero_img = np.zeros(shape=zero_shape, dtype='uint8')
 
     for box in region:
-        cv2.drawContours(copy_img, [box], 0, (0, 255, 0), 2)
+        # cv2.drawContours(copy_img, [box], 0, (0, 255, 0), 2)
         cv2.drawContours(zero_img, [box], 0, (0, 255, 0), 2)
         range_data.append(cv2.boundingRect(box))
         # print(box)
@@ -71,8 +72,8 @@ def find_text_position():
         crop_img = copy_img[rect[1] - range_:rect[1] + rect[3] + range_ * 2,
                    rect[0] - range_:rect[0] + rect[2] + range_ * 2]
         text = text_find(crop_img)
-        # print(text)
-        # cv2.imshow(str(text), crop_img)
+        print(text)
+        cv2.imshow(str(text), crop_img)
 
     gray = cv2.cvtColor(zero_img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
