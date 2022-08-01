@@ -140,10 +140,10 @@ def rotate_img(img, angle):
     return rotated_img
 
 # Load images
-before = cv2.imread('match_data\\or_1.png')
+before = cv2.imread('14526862-1.png')
 before = cv2.resize(before, (240, 240), interpolation=cv2.INTER_AREA)
 
-after = cv2.imread('or_1_2.png')
+after = cv2.imread('14526862-1_compare.png')
 after = cv2.resize(after, (240, 240), interpolation=cv2.INTER_AREA)
 
 # crop_img, rotated_img = after.copy(), after.copy()
@@ -190,7 +190,7 @@ filled_after = after.copy()
 
 for c in contours:
     area = cv2.contourArea(c)
-    if area > 350:
+    if area > 150:
         x, y, w, h = cv2.boundingRect(c)
         # print(x, y, w, h)
         # print(range_data)

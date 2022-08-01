@@ -109,18 +109,18 @@ def circle_detect(img):
     rows = gray.shape[0]
 
     circles = cv2.HoughCircles(gray,
-                              cv2.HOUGH_GRADIENT,
-                              minDist=10,
-                              # 圓心距離
-                              dp=1.2,
-                              # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
-                              param1=150,
-                              # canny檢測的高闊值，低闊值為一半
-                              param2=18,
-                              # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
-                              minRadius=9,
-                              # 最小半徑
-                              maxRadius=19)
+                               cv2.HOUGH_GRADIENT,
+                               minDist=5,
+                               # 圓心距離
+                               dp=1.2,
+                               # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
+                               param1=150,
+                               # canny檢測的高闊值，低闊值為一半
+                               param2=35,
+                               # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
+                               minRadius=1,
+                               # 最小半徑
+                               maxRadius=19)
     # 最大半徑
     circles_data = []
     if circles is not None:
@@ -141,7 +141,7 @@ def circle_detect(img):
     for item in circles_data:
         text = '%s' % item['number']
         cv2.putText(img, text, item['center'], cv2.FONT_HERSHEY_SIMPLEX,
-                   1, (0, 0, 255), 2, cv2.LINE_AA)
+                    1, (0, 0, 255), 2, cv2.LINE_AA)
         # 繪製文字(圖片影像/繪製的文字/左上角坐標/字體/字體大小/顏色/字體粗細/字體線條種類)
     # cv.imshow("detected circles", src)
     #
@@ -260,6 +260,7 @@ def text_find(img):
     text = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", text)
     return text
 
+
 def find_text_position(img):
     # 讀取圖片
     # imagePath = 'match_data\\or_2.png'
@@ -273,7 +274,7 @@ def find_text_position(img):
     ret, binary = cv2.threshold(sobel, 50, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
     # 膨脹、腐蝕
     element1 = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 5))
-    element2 = cv2.getStructuringElement(cv2.MORPH_RECT, (24, 5))
+    element2 = cv2.getStructuringElement(cv2.MORPH_RECT, (30, 5))
     # 膨脹一次，讓輪廓突出
     dilation = cv2.dilate(binary, element2, iterations=1)
     # 腐蝕一次，去掉細節
@@ -419,11 +420,11 @@ while (True):
         (x, y, w, h) = find_text_position(crop_img)
         cv2.rectangle(crop_img, (x, y), (x + w, y + h), (255, 255, 0), 1)
         cv2.imshow('crop_img', crop_img)
-    # # ------目標區域文字
-    if check is True:
-        text = text_find(crop_img)
-        cv2.putText(frame, str(text), [100, 150], cv2.FONT_HERSHEY_SIMPLEX, 1,
-                    (255, 255, 0), 2, cv2.LINE_AA)
+    # # # ------目標區域文字
+    # if check is True:
+    #     text = text_find(crop_img)
+    #     cv2.putText(frame, str(text), [100, 150], cv2.FONT_HERSHEY_SIMPLEX, 1,
+    #                 (255, 255, 0), 2, cv2.LINE_AA)
 
     # ------目標區域圓孔偵測
     if check is True:
@@ -437,8 +438,6 @@ while (True):
     # line_target_img = line_detect(line_target_img)
     # cv2.imshow('line_target_img', line_target_img)
     # cv2.imshow('crop_img', crop_img)
-
-
 
     cv2.imshow('cam', frame)
     if cv2.waitKey(1) == ord('q'):

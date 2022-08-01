@@ -6,8 +6,14 @@ import numpy as np
 def text_find(img):
     # img_name = 'match_data\\or_1.png'  # Input圖片檔名
     # img = cv2.imread(img_name)
-    text = pytesseract.image_to_string(img, lang='eng')
-    text = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", text)
+    (h, l, w) = img.shape
+    print((h, l, w))
+    text = str()
+    if h == 0 or w == 0 or l == 0:
+        pass
+    else:
+        text = pytesseract.image_to_string(img, lang='eng')
+        text = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", text)
     return text
 
 
@@ -80,17 +86,20 @@ def find_text_position(img):
     x, y, w, h = cv2.boundingRect(cnt)
     cv2.rectangle(zero_img, (x, y), (x + w, y + h), (255, 255, 0), 1)
     cv2.imshow('zero_img', zero_img)
-    print(x, y, w, h)
+    # print(x, y, w, h)
     return [x, y, w, h]
 
 
 def compare(before, after):
     # Load images
     # before = cv2.imread('match_data\\or_1.png')
-    before = cv2.resize(before, (250, 250), interpolation=cv2.INTER_AREA)
+    print(before.shape)
+    print(after.shape)
+    (w, h, l) = before.shape
+    before = cv2.resize(before, (w, h), interpolation=cv2.INTER_AREA)
 
     # after = cv2.imread('or_1_2.png')
-    after = cv2.resize(after, (250, 250), interpolation=cv2.INTER_AREA)
+    after = cv2.resize(after, (w, h), interpolation=cv2.INTER_AREA)
     range_data = find_text_position(after)
 
     # Convert images to grayscale
@@ -119,7 +128,7 @@ def compare(before, after):
 
     for c in contours:
         area = cv2.contourArea(c)
-        if area > 350:
+        if area > 1000:
             x, y, w, h = cv2.boundingRect(c)
             # print(x, y, w, h)
             # print(range_data)
