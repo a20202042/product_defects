@@ -52,25 +52,25 @@ class VideoThread(QThread):
         cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
         while self._run_flag:
             ret, cv_img = cap.read()
-            cv_img = self.back_ground_remove(cv_img)
+            cv_img = self.back_ground_remove(cv_img)  # 去背
             if gvar.start is True:
                 ret, cv_img = cap.read()
-                cv_img = self.back_ground_remove(cv_img)
+                cv_img = self.back_ground_remove(cv_img)  # 去背
                 part_name = str()
                 object_img, rotated_img, rotated_img_2, circle_detect_img = cv_img.copy(), cv_img.copy(), cv_img.copy(), cv_img.copy()
                 # cv2.imshow('cv', cv_img)
                 # cv2.waitKey(0)
-                self.change_pixmap_signal_cam.emit(cv_img)
-                box_img, box_compact_img, box = self.box_compact(cv_img)
+                self.change_pixmap_signal_cam.emit(cv_img) #設定影像參數並將畫面顯示於指定Label中
+                box_img, box_compact_img, box = self.box_compact(cv_img) #最小矩形繪製
                 # crop_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), object_img)
                 # print(crop_img.shape[1])
                 # img = self.resize_img(crop_img)
-                angle = self.angle_calculate(box)
-                rotated_img = self.rotate_img(rotated_img, angle)
+                angle = self.angle_calculate(box) #參數計算
+                rotated_img = self.rotate_img(rotated_img, angle) #縮放成指定大小
                 # cv2.imshow('cv', rotated_img)
                 # cv2.waitKey(0)
-                not_use, not_use_2, box = self.box_compact(rotated_img)
-                crop_img = self.rotate_img(rotated_img_2, angle)
+                not_use, not_use_2, box = self.box_compact(rotated_img) #最小矩形繪製
+                crop_img = self.rotate_img(rotated_img_2, angle)#縮放成指定大小
                 compare_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]),
                                         crop_img, 0)
                 crop_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]),
@@ -308,33 +308,39 @@ class VideoThread(QThread):
         return hu
 
     def rotate_img(self, img, angle):
-        rotated_img = imutils.rotate_bound(img, angle)
+        rotated_img = imutils.rotate_bound(img, angle) #縮小成適當大小
         # rotated_img
         return rotated_img
 
     def back_ground_remove(self, img):
-        low_green = np.array([0, 0, 90])
-        high_green = np.array([255, 255, 255])
-        imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(imgHSV, low_green, high_green)
-        res = cv2.bitwise_and(img, img, mask=mask)
+        low_green = np.array([0, 0, 90])  # 創建矩陣
+        high_green = np.array([255, 255, 255])  # 創建矩陣
+        imgHSV = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # 轉hsv
+        mask = cv2.inRange(imgHSV, low_green, high_green)  # 某顏色區域影像位置，(原圖,低於low_green和高於high_green，圖像值變為0)
+        res = cv2.bitwise_and(img, img, mask=mask)  # 遮罩印在原來的圖片上(挖掉圖像)
         return res
 
     def box_compact(self, img):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # 圖片二值化，(img, 閥值, 最大灰度值, 使用的二值化方法)
         kernel = np.ones((3, 3), dtype=np.uint8)
+        # 設定矩陣大小和類型，(shape(個數,寬,高),dtype,order,like)
         closing = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        # 形態學變化函數，(img,op,kernal(濾波器))，cv2.MORPH_CLOSE閉運算。
         contours, hierarchy = cv2.findContours(closing, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        cnt = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(cnt)
+        # 尋找輪廓，cv2.RETR_TREE檢索完整層次結構中的輪廓，cv2.CHAIN_APPROX_NONE存储所有的輪廓點，相鄰的兩個點的像素位置差不超過1
+        cnt = max(contours, key=cv2.contourArea)  # 計算面積
+        x, y, w, h = cv2.boundingRect(cnt)  # cv2.findContours所取得x, y, w, h ，計算出包覆輪廓的最小的正矩形
         img_2, img_3 = img.copy(), img.copy()
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 0), 1)
+        # 繪製矩形
         # cv2.imshow('img', img)
-        rect = cv2.minAreaRect(cnt)
-        box = cv2.boxPoints(rect)
-        box = np.int0(box)
+        rect = cv2.minAreaRect(cnt)  # 包護輪廓的最小斜矩形，中心點座標,寬高,旋轉角度
+        box = cv2.boxPoints(rect)  # 獲得矩形4個頂點
+        box = np.int0(box)  # 取整
         cv2.drawContours(img_2, [box], 0, (0, 0, 255), 2)
+        # 繪製出輪廓，(圖像,輪廓參數,繪製輪廓數,顏色,寬度)
         return img, img_2, box
 
     def crop(self, left_point_x, right_point_x, top_point_y, bottom_point_y, crop_img, range):
@@ -428,13 +434,13 @@ class App(QWidget, Ui_Form):
         self.ui.label_12.setText(text)
 
     def convert_cv_qt(self, cv_img, im_w, im_h):  # 輸入label
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_image.shape
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)  # 轉成RGB
+        h, w, ch = rgb_image.shape  # 取得參數，（高度、寬度、通道數）
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line,
-                                            QtGui.QImage.Format_RGB888)
-        p = convert_to_Qt_format.scaled(im_w, im_h, Qt.KeepAspectRatio)
-        return QPixmap.fromImage(p)
+                                            QtGui.QImage.Format_RGB888)  # 讀取圖片顯示在QLabel上
+        p = convert_to_Qt_format.scaled(im_w, im_h, Qt.KeepAspectRatio)  #固定長寬比
+        return QPixmap.fromImage(p) #格式轉換Pixmap>Image
 
     def resize_img(self, img):
         (w, h, l) = img.shape
@@ -446,9 +452,9 @@ class App(QWidget, Ui_Form):
 
     @pyqtSlot(np.ndarray)
     def update_image_cam(self, cv_img):
-        w, h, l = cv_img.shape
+        w, h, l = cv_img.shape  # 圖像參數（高度、寬度、通道數）
         qt_img = self.convert_cv_qt(cv_img, w, h)
-        self.ui.camera.setPixmap(qt_img)
+        self.ui.camera.setPixmap(qt_img)  #顯示於Label中
 
     def update_image_get_object_img(self, cv_img):
         cv_img = self.resize_img(cv_img)
