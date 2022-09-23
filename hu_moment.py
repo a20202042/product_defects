@@ -20,17 +20,30 @@ class VideoThread(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
+
     def stop(self):
         self._run_flag = False
+
     def run(self):
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
-        cap.set(cv2.CAP_PROP_CONTRAST, 5.0)  # 对比度 32
-        cap.set(cv2.CAP_PROP_SATURATION, 83.0)  # 饱和度 64
-        cap.set(cv2.CAP_PROP_HUE, -1.0)  # 色调 0
-        cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
+        cap = cv2.VideoCapture()
+        # The device number might be 0 or 1 depending on the device and the webcam
+        cap.open(1)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        cap.set(cv2.CAP_PROP_FPS, 60)
+        # while (True):
+        #     ret, frame = cap.read()
+        #     cv2.imshow('frame', frame)
+        #     if cv2.waitKey(1) & 0xFF == ord('q'):
+        #         break
+        # cap = cv2.VideoCapture(0)
+        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        # cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
+        # cap.set(cv2.CAP_PROP_CONTRAST, 5.0)  # 对比度 32
+        # cap.set(cv2.CAP_PROP_SATURATION, 83.0)  # 饱和度 64
+        # cap.set(cv2.CAP_PROP_HUE, -1.0)  # 色调 0
+        # cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
         while self._run_flag:
             ret, cv_img = cap.read()
             self.change_pixmap_signal_cam.emit(cv_img)
@@ -152,8 +165,6 @@ class App(QWidget, Ui_Form):
         gvar.start = False
         self.ui.label.clear()
 
-
-
     def save_crop_img(self, cv_img):
         path = self.ui.line_path.text()
         name = self.ui.line_name.text()
@@ -255,12 +266,18 @@ class App(QWidget, Ui_Form):
     @pyqtSlot(np.ndarray)
     def update_image_cam(self, cv_img):
         w, h, l = cv_img.shape  # 圖像參數（高度、寬度、通道數）
+        w = 9 * w / 10
+        h = 9 * h / 10
         qt_img = self.convert_cv_qt(cv_img, w, h)
         self.ui.picture.setPixmap(qt_img)  # 顯示於Label中
 
     @pyqtSlot(np.ndarray)
     def cut_down(self, cv_img):
         w, h, l = cv_img.shape  # 圖像參數（高度、寬度、通道數）
+        # if w >= 337 and h > 356:
+        #     w = 6 * w / 10
+        #     h = 6 * h / 10
+
         qt_img = self.convert_cv_qt(cv_img, w, h)
         self.ui.label.setPixmap(qt_img)  # 顯示於Label中
 

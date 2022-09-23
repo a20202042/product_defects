@@ -42,14 +42,20 @@ class VideoThread(QThread):
         return data
 
     def run(self):
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
-        cap.set(cv2.CAP_PROP_CONTRAST, 5.0)  # 对比度 32
-        cap.set(cv2.CAP_PROP_SATURATION, 83.0)  # 饱和度 64
-        cap.set(cv2.CAP_PROP_HUE, -1.0)  # 色调 0
-        cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
+        cap = cv2.VideoCapture()
+        # The device number might be 0 or 1 depending on the device and the webcam
+        cap.open(1)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        cap.set(cv2.CAP_PROP_FPS, 60)
+        # cap = cv2.VideoCapture(1)
+        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        # cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
+        # cap.set(cv2.CAP_PROP_CONTRAST, 5.0)  # 对比度 32
+        # cap.set(cv2.CAP_PROP_SATURATION, 83.0)  # 饱和度 64
+        # cap.set(cv2.CAP_PROP_HUE, -1.0)  # 色调 0
+        # cap.set(cv2.CAP_PROP_EXPOSURE, -6.0)  # 曝光 -4
         while self._run_flag:
             ret, cv_img = cap.read()
             cv_img = self.back_ground_remove(cv_img)  # 去背
@@ -58,14 +64,12 @@ class VideoThread(QThread):
                 cv_img = self.back_ground_remove(cv_img)  # 去背
                 part_name = str()
                 object_img, rotated_img, rotated_img_2, circle_detect_img = cv_img.copy(), cv_img.copy(), cv_img.copy(), cv_img.copy()
-                # cv2.imshow('cv', cv_img)
-                # cv2.waitKey(0)
-                self.change_pixmap_signal_cam.emit(cv_img) #設定影像參數並將畫面顯示於指定Label中
-                box_img, box_compact_img, box = self.box_compact(cv_img) #最小矩形繪製
-                # crop_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]), object_img)
-                # print(crop_img.shape[1])
-                # img = self.resize_img(crop_img)
-                angle = self.angle_calculate(box) #參數計算
+                try:
+                    box_img, box_compact_img, box = self.box_compact(cv_img)  # 最小矩形繪製
+                except:
+                    self.change_pixmap_signal_cut_img.emit(cv2.imread('error.jpg'))  # 設定影像參數並將畫面顯示於指定Label中
+                else:
+                    angle = self.angle_calculate(box)  # 參數計算
                 rotated_img = self.rotate_img(rotated_img, angle) #縮放成指定大小
                 # cv2.imshow('cv', rotated_img)
                 # cv2.waitKey(0)
@@ -434,7 +438,10 @@ class App(QWidget, Ui_Form):
         self.ui.label_12.setText(text)
 
     def convert_cv_qt(self, cv_img, im_w, im_h):  # 輸入label
-        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)  # 轉成RGB
+        try:
+            rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)  # 轉成RGB
+        except:
+            rgb_image = np.zeros((1280, 720, 3), np.uint8)
         h, w, ch = rgb_image.shape  # 取得參數，（高度、寬度、通道數）
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line,
