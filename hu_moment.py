@@ -1,5 +1,8 @@
 import cv2, sys
+import os
 import numpy as np
+from numpy import copysign, log10
+import json
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -17,9 +20,10 @@ class VideoThread(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-
+    def stop(self):
+        self._run_flag = False
     def run(self):
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
         cap.set(cv2.CAP_PROP_BRIGHTNESS, 133.0)  # 亮度 130
@@ -53,7 +57,6 @@ class VideoThread(QThread):
                     self.change_pixmap_signal_cut_img.emit(compare_img)  # 設定影像參數並將畫面顯示於指定Label中
 
                     if gvar.crop_check is True:
-                        # gvar.start = False
                         self.return_crop_img.emit(compare_img)
                         gvar.crop_check = False
 
@@ -136,12 +139,20 @@ class App(QWidget, Ui_Form):
         self.thread.change_pixmap_signal_cam.connect(self.update_image_cam)
         self.ui.RUN.clicked.connect(self.start)
         self.ui.cut.clicked.connect(self.cut)
+        self.ui.hu.clicked.connect(self.hu)
+        self.ui.Stop.clicked.connect(self.stop)
+        self.ui.toolButton.clicked.connect(self.path)
         self.thread.change_pixmap_signal_cut_img.connect(self.cut_down)
         self.thread.return_crop_img.connect(self.save_crop_img)
-        self.ui.toolButton.clicked.connect(self.path)
 
     def start(self):
         gvar.start = True
+
+    def stop(self):
+        gvar.start = False
+        self.ui.label.clear()
+
+
 
     def save_crop_img(self, cv_img):
         path = self.ui.line_path.text()
@@ -154,6 +165,76 @@ class App(QWidget, Ui_Form):
 
     def cut(self):
         gvar.crop_check = True
+
+    def hu(self):
+        gvar.hu_json = True
+        path = self.ui.line_path.text()
+        path = path.split('/')
+        sep = '\\'
+        path_name = sep.join(path)
+        self.hu_json(path_name)
+
+    def hu_json(self, path_name):
+        all_data = {}
+        files = os.listdir(path_name)
+        for file in files:
+            print(file)
+            all_hu = []
+            for i in range(0, 180):
+                im = cv2.imread(path_name + '\\' + file, cv2.IMREAD_GRAYSCALE)
+                im = self.rotate_img_hu(im, i)
+                hu = self.hu_moment(im)
+                all_hu.append(hu)
+                print(hu)
+            hu_1 = []
+            hu_2 = []
+            hu_3 = []
+            for item in all_hu:
+                hu_1.append(item[0])
+                hu_2.append(item[1])
+                hu_3.append(item[2])
+
+            print('hu1:' + str(min(hu_1)) + ' ' + str(max(hu_1)))
+            print('hu2:' + str(min(hu_2)) + ' ' + str(max(hu_2)))
+            print('hu3:' + str(min(hu_3)) + ' ' + str(max(hu_3)))
+
+            item_hu = {'hu1': [min(hu_1), max(hu_1)],
+                       'hu2': [min(hu_2), max(hu_2)],
+                       'hu3': [min(hu_3), max(hu_3)]}
+            all_data.update({str(file): item_hu})
+
+        with open('data.json', 'w') as f:
+            json.dump(all_data, f)
+
+        f = open('data.json')
+        data = json.load(f)
+        print(data)
+
+    def rotate_img_hu(self, img, angle):
+        (h, w) = img.shape  # 讀取圖片大小
+        center = (w // 2, h // 2)  # 找到圖片中心
+
+        # 第一個參數旋轉中心，第二個參數旋轉角度(-順時針/+逆時針)，第三個參數縮放比例
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+        # 第三個參數變化後的圖片大小
+        rotate_img = cv2.warpAffine(img, M, (w, h))
+
+        return rotate_img
+
+    def hu_moment(self, im):
+        # im = cv2.imread(img_filename, cv2.IMREAD_GRAYSCALE)
+        _, im = cv2.threshold(im, 60, 255, cv2.THRESH_BINARY)
+        # cv2.imshow('im', im)
+        moments = cv2.moments(im)
+        huMoments = cv2.HuMoments(moments)
+        for i in range(0, 7):
+            huMoments[i] = -1 * copysign(1.0, huMoments[i]) * log10(abs(huMoments[i]))
+            huMoments[i] = round(huMoments[i][0], 3)
+        hu = []
+        for item in huMoments:
+            hu.append(float(item[0]))
+        return hu
 
     def path(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Openfolder", "./ ")
