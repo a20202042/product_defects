@@ -27,7 +27,7 @@ class VideoThread(QThread):
     def run(self):
         cap = cv2.VideoCapture()
         # The device number might be 0 or 1 depending on the device and the webcam
-        cap.open(1)
+        cap.open(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         cap.set(cv2.CAP_PROP_FPS, 60)

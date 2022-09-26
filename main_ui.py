@@ -27,7 +27,7 @@ class VideoThread(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        dir = 'match_data'
+        dir = 'test'
         files = os.listdir(dir)
         self.file_data = []
         for file in files:
@@ -44,7 +44,7 @@ class VideoThread(QThread):
     def run(self):
         cap = cv2.VideoCapture()
         # The device number might be 0 or 1 depending on the device and the webcam
-        cap.open(1)
+        cap.open(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         cap.set(cv2.CAP_PROP_FPS, 60)
@@ -84,12 +84,15 @@ class VideoThread(QThread):
                 # stust = cv2.imwrite('match_data/ASSY-14526561-1.png', crop_img)
                 # stust = cv2.imwrite('match_data/14526862-1.png', crop_img)
                 # crop_img = self.resize_img(crop_img)
+                cv2.imshow('11',crop_img)
+                cv2.waitKey(0)
                 self.change_pixmap_signal_get_object_img.emit(crop_img)
                 for item in self.file_data:
                     template = item['template']
                     file = item['file']
                     h, w, l = template.shape
                     # print(h, w, l)
+                    print(file)
                     if crop_img.shape[0] < h and crop_img.shape[1] < w:
                         res = cv2.matchTemplate(crop_img, template, cv2.TM_CCORR_NORMED)
                         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -146,7 +149,7 @@ class VideoThread(QThread):
         cap.release()
 
     def compare_find(self, or_img, check_img):
-        before = cv2.imread('match_data\\' + or_img)
+        before = cv2.imread('test\\' + or_img)
         (h, w, d) = before.shape
         before = before[20:h - 20, 20:w - 20]
         before = cv2.resize(before, (w, h), interpolation=cv2.INTER_AREA)
@@ -459,6 +462,7 @@ class App(QWidget, Ui_Form):
 
     @pyqtSlot(np.ndarray)
     def update_image_cam(self, cv_img):
+        cv_img = self.resize_img(cv_img)
         w, h, l = cv_img.shape  # 圖像參數（高度、寬度、通道數）
         qt_img = self.convert_cv_qt(cv_img, w, h)
         self.ui.camera.setPixmap(qt_img)  #顯示於Label中
