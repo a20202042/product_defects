@@ -189,14 +189,14 @@ class App(QWidget, Ui_Form):
         all_data = {}
         files = os.listdir(path_name)
         for file in files:
-            print(file)
+            # print(file)
             all_hu = []
             for i in range(0, 180):
                 im = cv2.imread(path_name + '\\' + file, cv2.IMREAD_GRAYSCALE)
                 im = self.rotate_img_hu(im, i)
                 hu = self.hu_moment(im)
                 all_hu.append(hu)
-                print(hu)
+                # print(hu)
             hu_1 = []
             hu_2 = []
             hu_3 = []
