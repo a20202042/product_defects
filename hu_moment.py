@@ -27,7 +27,7 @@ class VideoThread(QThread):
     def run(self):
         cap = cv2.VideoCapture()
         # The device number might be 0 or 1 depending on the device and the webcam
-        cap.open(1)
+        cap.open(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         cap.set(cv2.CAP_PROP_FPS, 60)
@@ -189,14 +189,14 @@ class App(QWidget, Ui_Form):
         all_data = {}
         files = os.listdir(path_name)
         for file in files:
-            print(file)
+            # print(file)
             all_hu = []
             for i in range(0, 180):
                 im = cv2.imread(path_name + '\\' + file, cv2.IMREAD_GRAYSCALE)
                 im = self.rotate_img_hu(im, i)
                 hu = self.hu_moment(im)
                 all_hu.append(hu)
-                print(hu)
+                # print(hu)
             hu_1 = []
             hu_2 = []
             hu_3 = []

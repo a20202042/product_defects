@@ -27,7 +27,7 @@ class VideoThread(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        dir = 'match_data'
+        dir = 'test'
         files = os.listdir(dir)
         self.file_data = []
         for file in files:
@@ -44,7 +44,7 @@ class VideoThread(QThread):
     def run(self):
         cap = cv2.VideoCapture()
         # The device number might be 0 or 1 depending on the device and the webcam
-        cap.open(1)
+        cap.open(0)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         cap.set(cv2.CAP_PROP_FPS, 60)
@@ -78,18 +78,21 @@ class VideoThread(QThread):
                 compare_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]),
                                         crop_img, 0)
                 crop_img = self.crop(np.min(box[:, 0]), np.max(box[:, 0]), np.min(box[:, 1]), np.max(box[:, 1]),
-                                     crop_img, 3)
+                                     crop_img, 0)
                 text_img = crop_img.copy()
 
                 # stust = cv2.imwrite('match_data/ASSY-14526561-1.png', crop_img)
                 # stust = cv2.imwrite('match_data/14526862-1.png', crop_img)
                 # crop_img = self.resize_img(crop_img)
+                cv2.imshow('11',crop_img)
+                cv2.waitKey(0)
                 self.change_pixmap_signal_get_object_img.emit(crop_img)
                 for item in self.file_data:
                     template = item['template']
                     file = item['file']
                     h, w, l = template.shape
                     # print(h, w, l)
+                    print(file)
                     if crop_img.shape[0] < h and crop_img.shape[1] < w:
                         res = cv2.matchTemplate(crop_img, template, cv2.TM_CCORR_NORMED)
                         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -128,9 +131,9 @@ class VideoThread(QThread):
                     if circles_data != []:
                         self.circle_text.emit(circles_data)
                 # 文字位置
-                text_img = self.rotate_img(text_img, -90)
-                text_img = self.text_find(text_img)
-                self.change_pixmap_signal_find_text.emit(text_img)
+                # text_img = self.rotate_img(text_img, -90)
+                # text_img = self.text_find(text_img)
+                # self.change_pixmap_signal_find_text.emit(text_img)
                 # --------
                 # 比較
                 compare, compare_check = self.compare_find(part_name, compare_img)
@@ -146,7 +149,7 @@ class VideoThread(QThread):
         cap.release()
 
     def compare_find(self, or_img, check_img):
-        before = cv2.imread('match_data\\' + or_img)
+        before = cv2.imread('test\\' + or_img)
         (h, w, d) = before.shape
         before = before[20:h - 20, 20:w - 20]
         before = cv2.resize(before, (w, h), interpolation=cv2.INTER_AREA)
@@ -242,18 +245,18 @@ class VideoThread(QThread):
         rows = gray.shape[0]
 
         circles = cv2.HoughCircles(gray,
-                                   cv2.HOUGH_GRADIENT,
-                                   minDist=40,
-                                   # 圓心距離
-                                   dp=1.2,
-                                   # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
-                                   param1=150,
-                                   # canny檢測的高闊值，低闊值為一半
-                                   param2=50,
-                                   # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
-                                   minRadius=1,
-                                   # 最小半徑
-                                   maxRadius=40)
+                                  cv2.HOUGH_GRADIENT,
+                                  minDist=40,
+                                  # 圓心距離
+                                  dp=1.2,
+                                  # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
+                                  param1=150,
+                                  # canny檢測的高闊值，低闊值為一半
+                                  param2=35,
+                                  # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
+                                  minRadius=1,
+                                  # 最小半徑
+                                  maxRadius=40)
         # 最大半徑
         circles_data = []
         if circles is not None:
@@ -412,7 +415,7 @@ class App(QWidget, Ui_Form):
         gvar.start = False
 
     def part_img(self, file_name):
-        file = 'match_data' + '\\' + file_name
+        file = 'test' + '\\' + file_name
         img = cv2.imread(file)
         img = self.resize_img(img)
         w, h, l = img.shape
@@ -459,6 +462,7 @@ class App(QWidget, Ui_Form):
 
     @pyqtSlot(np.ndarray)
     def update_image_cam(self, cv_img):
+        cv_img = self.resize_img(cv_img)
         w, h, l = cv_img.shape  # 圖像參數（高度、寬度、通道數）
         qt_img = self.convert_cv_qt(cv_img, w, h)
         self.ui.camera.setPixmap(qt_img)  #顯示於Label中

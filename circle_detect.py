@@ -20,7 +20,7 @@ def main(img):
                               # 檢測圓心的累加器精度和圖像精度比的倒數(1=相同分辨綠，2=累加器是輸入圖案一半大的寬高)
                               param1=150,
                               # canny檢測的高闊值，低闊值為一半
-                              param2=50,
+                              param2=35,
                               # 圓心的累加器闊值，越小檢測更多的圓，越大越精確
                               minRadius=1,
                               # 最小半徑
@@ -59,7 +59,7 @@ def main(img):
 #     main(src)
 #     print(circles_data)
 #     cv.waitKey(0)0
-src = cv.imread('match_data\\ASSY-14526561-1.png')  # 讀取圖片
+src = cv.imread('test\\5202-103.png')  # 讀取圖片
 # low_green = np.array([0, 0, 90])
 # high_green = np.array([255, 255, 255])
 # imgHSV = cv.cvtColor(src, cv.COLOR_BGR2HSV)
