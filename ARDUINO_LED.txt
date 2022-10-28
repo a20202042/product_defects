@@ -2,7 +2,6 @@
 
 #define LED_PIN     5 //LED腳位
 #define NUM_LEDS    24 //LED數量
-
 #define LED_TYPE    WS2812 //LED類型
 #define COLOR_ORDER GRB //RGB排列順序
 CRGB leds[NUM_LEDS];
@@ -13,42 +12,65 @@ void setup() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     Serial.begin(9600);
 }
-void loop()
-{    if (Serial.available()) {
+void loop(){
+  if (Serial.available()) {
     // 讀取傳入的字串直到"\n"結尾
     str = Serial.readStringUntil('\n');
-    static uint8_t  BRIGHTNESS = 0;
-    if (str == "HIGH") {           
-      if (BRIGHTNESS+15>=225)
+    static uint8_t  BRIGHTNESS = 100;
+      if (str == "RED") {
+      for(int i =0 ; i< NUM_LEDS; ++i){
+       leds [ i ] = CRGB::Red;
+       FastLED.show() ;
+       }}
+     else if (str == "GREEN") {
+       for(int i =0 ; i< NUM_LEDS; ++i){
+       leds [ i ] =CRGB::Green ;
+       }}
+      else if (str == "BLUE") {
+       for(int i =0 ; i< NUM_LEDS; ++i){
+       leds [ i ] =CRGB::Blue ;
+}}
+
+       else if (str == "WHITE") {
+       for(int i =0 ; i< NUM_LEDS; ++i){
+       leds [ i ] =CRGB::White ;
+     }
+       }
+     else if (str == "HIGH") {
+    if (BRIGHTNESS+15>=225)
       { BRIGHTNESS=225;}
        else
        {BRIGHTNESS=BRIGHTNESS+15;}
        Serial.println(BRIGHTNESS);
        }
-     else if (str == "LOW") {          
+     else if (str == "LOW") {
       if (BRIGHTNESS-15<=0)
        {BRIGHTNESS=0;}
        else
        {BRIGHTNESS = BRIGHTNESS-15;}
        Serial.println(BRIGHTNESS);
        }
-      else if (str == "MAX") {           
+      else if (str == "MAX") {
         BRIGHTNESS = 225;
        Serial.println(BRIGHTNESS);
        }
-      else if (str == "MINI") {          
-        BRIGHTNESS = 0;
-      Serial.println(BRIGHTNESS);
+       else if (str == "MINI") {
+       BRIGHTNESS = 0;
+       Serial.println(BRIGHTNESS);
        }
-    
-    FastLED.setBrightness(BRIGHTNESS );
-    for(int i =0 ; i< NUM_LEDS; ++i){
-       leds [ i ] = CRGB(255,255,255);
-        delay(100);
-        FastLED.show();
+       else if (str == "RETURN") {
+       BRIGHTNESS = 225;
+       Serial.println(BRIGHTNESS);
+       return;
        }
-     
+       else if (str == "CLOSE") {
+       BRIGHTNESS = 0;
+       Serial.println(BRIGHTNESS);
+       }
+     FastLED.setBrightness(BRIGHTNESS );
+     FastLED.show();
 
-    
 }
 }
+
+
