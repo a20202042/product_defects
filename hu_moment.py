@@ -16,6 +16,7 @@ class VideoThread(QThread):
     change_pixmap_signal_cam = pyqtSignal(np.ndarray)
     change_pixmap_signal_cut_img = pyqtSignal(np.ndarray)
     return_crop_img = pyqtSignal(np.ndarray)
+    return_crop_img_initial = pyqtSignal(np.ndarray)
 
     def __init__(self):
         super().__init__()
@@ -70,7 +71,9 @@ class VideoThread(QThread):
                     self.change_pixmap_signal_cut_img.emit(compare_img)  # 設定影像參數並將畫面顯示於指定Label中
 
                     if gvar.crop_check is True:
+                        ret, cv_img_initial = cap.read()
                         self.return_crop_img.emit(compare_img)
+                        self.return_crop_img_initial.emit(cv_img_initial)
                         gvar.crop_check = False
 
         cap.release()
@@ -157,6 +160,7 @@ class App(QWidget, Ui_Form):
         self.ui.toolButton.clicked.connect(self.path)
         self.thread.change_pixmap_signal_cut_img.connect(self.cut_down)
         self.thread.return_crop_img.connect(self.save_crop_img)
+        self.thread.return_crop_img_initial.connect(self.save_crop_img_initial)
 
     def start(self):
         gvar.start = True
@@ -171,7 +175,14 @@ class App(QWidget, Ui_Form):
         path = path.split('/')
         sep = '\\'
         path_name = sep.join(path) + '\\' + name + '.png'
-        print(path_name)
+        cv2.imwrite(path_name, cv_img)
+
+    def save_crop_img_initial(self,cv_img):
+        path = self.ui.line_path.text()
+        name = self.ui.line_name.text()
+        path = path.split('/')
+        sep = '\\'
+        path_name = sep.join(path) + '\\' + name + '_0.png'
         cv2.imwrite(path_name, cv_img)
 
     def cut(self):
